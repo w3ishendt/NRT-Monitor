@@ -32,7 +32,7 @@ This gives internal support a fast operational view of which sites need investig
 # Instructions to Run
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/weishen1113/NRT-Monitor.git
+   git clone https://github.com/w3ishendt/NRT-Monitor.git
    cd NRT-Monitor
    ```
 
