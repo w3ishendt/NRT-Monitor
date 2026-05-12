@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}NRT Monitoring Dashboard{% endblock %}
+
+{% block body_class %}dashboard-body{% endblock %}
+
+{% block content %}
+<main class="dashboard-shell container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <header class="dashboard-header text-center">
+                <p class="dashboard-kicker">Central Dashboard Server</p>
+                <h1>NRT Monitoring</h1>
+                <p class="dashboard-subtitle">Sites below currently have failed NRT detection based on TB_TNG_CONTROL_BATCH.</p>
+            </header>
+        </div>
+
+        <!-- Site Alert Cards Section -->
+        <div class="col-12">
+            <section class="cards-panel">
+                {% if statuses %}
+                <div class="site-card-grid">
+                    {% for s in statuses %}
+                    <a
+                        class="site-alert-card site-alert-{{ s.status }}{% if s.site_id == selected_site_id %} is-active{% endif %}"
+                        href="{{ url_for('dashboard', site=s.site_id) }}#site-detail"
+                        title="{{ s.terminal_count }} terminals in TB_TNG_CONTROL_BATCH"
+                    >
+                        <span class="site-alert-name">{{ s.site_name }}</span>
+                        <span class="site-alert-meta">{{ s.batch_count }} control batch rows</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="empty-note mb-0">No sites with failed NRT detection.</p>
+                {% endif %}
+            </section>
+        </div>
+
+        {% if selected_site %}
+        <div class="col-12">
+            {% include "site_detail.html" %}
+        </div>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
