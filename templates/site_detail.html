@@ -1,0 +1,99 @@
+<section class="dashboard-detail-stack" id="site-detail">
+    <section class="detail-panel">
+        <div class="detail-status-row">
+            <header class="detail-header">
+                <p class="detail-kicker">Site Detail</p>
+                <h2>{{ selected_site.site_name }} ({{ selected_site.site_code or selected_site.database }})</h2>
+                <p class="detail-subtitle">{{ selected_site.server_name }} | {{ selected_site.database }}</p>
+            </header>
+            <div class="status-badge status-{{ selected_site.status }}">{{ selected_site.status }}</div>
+        </div>
+
+        <p class="detail-message">{{ selected_site.issue_message }}</p>
+
+        <!-- Summary Cards Section -->
+        <div class="summary-grid row g-3 mt-1">
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Terminal Count</span>
+                <span class="summary-value">{{ selected_site.terminal_count }}</span>
+            </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Batch Count</span>
+                <span class="summary-value">{{ selected_site.batch_count }}</span>
+            </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Latest Operdate</span>
+                <span class="summary-value">{{ selected_site.latest_operdate or '-' }}</span>
+            </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Oldest Operdate</span>
+                <span class="summary-value">{{ selected_site.oldest_operdate or '-' }}</span>
+            </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Oldest Age Hours</span>
+                <span class="summary-value">{{ selected_site.oldest_age_hours if selected_site.oldest_age_hours is not none else '-' }}</span>
+            </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-2">
+            <div class="summary-box h-100">
+                <span class="summary-label">Received At</span>
+                <span class="summary-value">{{ selected_site.received_at }}</span>
+            </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Table Details Section -->
+    <section class="table-panel">
+        <div class="panel-header">
+            <div>
+                <h2 class="panel-title">TB_TNG_CONTROL_BATCH</h2>
+            </div>
+            <div class="summary-value">{{ selected_site.batch_count }} rows</div>
+        </div>
+
+        {% if selected_site.control_batches %}
+        <div class="table-wrap table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                <tr>
+                    <th scope="col">Site ID</th>
+                    <th scope="col">Terminal ID</th>
+                    <th scope="col">Batch No.</th>
+                    <th scope="col">Operdate</th>
+                    <th scope="col">EOJ Date Time</th>
+                    <th scope="col">Record Count</th>
+                    <th scope="col">Age Hours</th>
+                    <th scope="col" class="status-cell-width">Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in selected_site.control_batches %}
+                <tr>
+                    <td>{{ row.site_id }}</td>
+                    <td>{{ row.terminal_id }}</td>
+                    <td>{{ row.batch_no }}</td>
+                    <td>{{ row.operdate }}</td>
+                    <td>{{ row.eojdatetime }}</td>
+                    <td>{{ row.record_count }}</td>
+                    <td>{{ row.age_hours }}</td>
+                    <td class="status-cell status-cell-{{ row.status }}" title="{{ row.status }}"></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-note">No TB_TNG_CONTROL_BATCH rows were included in the latest site snapshot.</p>
+        {% endif %}
+    </section>
+</section>
