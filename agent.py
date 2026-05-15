@@ -8,7 +8,9 @@ SQL_SERVER = r"(local)\SQLEXPRESS"
 DATABASE = "NRT-V2"
 SITE_NAME = "Test Site"
 SITE_CODE = DATABASE
-API_URL = "http://the_server_api_url_or_local/api/nrt-status"
+API_URL = "https://script.google.com/macros/s/your_api_url/exec"
+API_KEY = "your_api_key"
+DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
 
 ALERT_THRESHOLD_HOURS = 48
 COLLECTION_INTERVAL_MINUTES = 40
@@ -17,21 +19,18 @@ CONNECTION_STRING = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     f"SERVER={SQL_SERVER};"
     f"DATABASE={DATABASE};"
-    # "UID=your_UID;"
-    # "PWD=your_PWD;"
+    "UID=your_UID;"
+    "PWD=your_PWD;"
     "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
 )
 
-
 def serialize_datetime(value):
     return value.strftime("%Y-%m-%d %H:%M:%S") if value else None
-
 
 def get_age_hours(reference_time, target_time):
     if not reference_time or not target_time:
         return None
     return max(int((reference_time - target_time).total_seconds() // 3600), 0)
-
 
 def get_color_status(record_count, age_hours):
     if record_count == 0 or age_hours is None:
@@ -40,7 +39,10 @@ def get_color_status(record_count, age_hours):
         return "Red"
     return "Orange"
 
-
+def build_site_id():
+    return SITE_NAME.lower().replace(" ", "-")
+# Generate human-readable NRT status message based on monitoring result.
+# Returns Green/Orange/Red alert message with pending batch information.
 def build_issue_message(status, batch_count, oldest_age_hours):
     if status == "Green":
         return "NRT healthy - no stale control batch records detected"
@@ -53,13 +55,14 @@ def build_issue_message(status, batch_count, oldest_age_hours):
         f"NRT alert - {batch_count} control batch records pending, "
         f"oldest operdate is {oldest_age_hours} hours old"
     )
-
-
+# Connect to SQL Server and collect latest TB_TNG_CONTROL_BATCH records.
+# Used to calculate NRT health, stale records, and dashboard status.
 def collect_nrt_status():
     conn = pyodbc.connect(CONNECTION_STRING)
     try:
         cursor = conn.cursor()
-
+        # Retrieve current SQL Server datetime for consistent monitoring calculations.
+        # Avoids relying on local machine/server system time.
         cursor.execute("SELECT GETDATE() AS current_db_time")
         database_time = cursor.fetchone()[0]
 
@@ -103,6 +106,8 @@ def collect_nrt_status():
         })
 
     return {
+        "api_key": API_KEY,
+        "site_id": build_site_id(),
         "site_name": SITE_NAME,
         "site_code": SITE_CODE,
         "server_name": SQL_SERVER,
@@ -121,24 +126,47 @@ def collect_nrt_status():
         "control_batches": control_batches,
     }
 
-
 def get_nrt_status():
     return collect_nrt_status()
 
-
-def send_to_api(data):
+def post_json(url, data, target_name):
     try:
-        response = requests.post(API_URL, json=data, timeout=10)
-        print("API response:", response.status_code)
-        print(response.text)
+        response = requests.post(url, json=data, timeout=10)
+        print(f"{target_name} response:", response.status_code)
+
+        response_payload = None
+        if response.text:
+            print(response.text)
+            try:
+                response_payload = response.json()
+            except ValueError:
+                response_payload = None
+
+        if not response.ok:
+            return False
+
+        if isinstance(response_payload, dict) and response_payload.get("success") is False:
+            return False
+
         return True
     except requests.RequestException as exc:
-        print(f"API send failed: {exc}")
+        print(f"{target_name} send failed: {exc}")
         return False
 
 
+def send_to_api(data):
+    apps_script_ok = post_json(API_URL, data, "Apps Script")
+
+    dashboard_ok = True
+    if DASHBOARD_API_URL:
+        dashboard_ok = post_json(DASHBOARD_API_URL, data, "Dashboard API")
+
+    return apps_script_ok and dashboard_ok
+
 def build_error_payload(error_message):
     return {
+        "api_key": API_KEY,
+        "site_id": build_site_id(),
         "site_name": SITE_NAME,
         "site_code": SITE_CODE,
         "server_name": SQL_SERVER,
@@ -182,7 +210,6 @@ def run_collector_loop(interval_minutes=COLLECTION_INTERVAL_MINUTES):
             print("Collector will retry on the next scheduled cycle")
         print(f"Sleeping for {interval_minutes} minutes before next cycle")
         time.sleep(interval_seconds)
-
 
 if __name__ == "__main__":
     if "--once" in sys.argv:
