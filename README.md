@@ -24,56 +24,64 @@ This gives internal support a fast operational view of which sites need investig
 | --------------------- | -------------------------------------- |
 | Frontend              | HTML, CSS, Bootstrap 5, Jinja2         |
 | Backend               | Python, Flask                          |
-| Data Collection       | requests, pyodbc                       |
+| Data Collection       | pyodbc                                 |
+| Integration / Sync    | requests, Google Apps Script           |
 | Database              | SQLite, SQL Server (source system)     |
-| Environment/Runtime   | Python venv                            |
+| Environment / Runtime | Python, Python venv                    |
 
 
 # Instructions to Run
-1. **Clone the repository**
+1. **Pre-requisite**
+   - Google Sheet / Apps Script
+   - Python 3.x.x
+   - Microsoft ODBC Driver 17 for SQL Server (x64)
+
+2. **Clone the repository**
    ```bash
    git clone https://github.com/w3ishendt/NRT-Monitor.git
    cd NRT-Monitor
    ```
 
-2. **Create a virtual environment**
+3. **Create a virtual environment**
    ```bash
    py -m venv venv
    .\venv\Scripts\activate  # On Linux / Mac OS: source venv/bin/activate
    ```
    - If error occurred, run this:
    ```bash
-   Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```
 
-3. **Install dependencies**
+4. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
    
-4. **Edit the credentials**
-    - In the `agent.py`
+5. **Edit the credentials**
+    - In the `agent.py`, edit the following credentials:
    ```bash
    SQL_SERVER = r"your_server_name" # eg.,: “(local)\SQLEXPRESS” or “DESKTOP-TAICUPD\SQLEXPRESS”
-    DATABASE = "NRT-V2"
-    SITE_NAME = "example: Penang Courtyard"
-    SITE_CODE = DATABASE
-    API_URL = "http://the_server_api_url_or_local/api/nrt-status"
-    
-    ALERT_THRESHOLD_HOURS = 48
-    COLLECTION_INTERVAL_MINUTES = 40
+   DATABASE = "NRT-V2"
+   SITE_NAME = " eg.,: Penang Courtyard "
+   SITE_CODE = DATABASE
+   API_URL = "https://script.google.com/macros/s/your_api_url/exec"
+   API_KEY = "your_api_key"
+   DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
 
-    CONNECTION_STRING = (
-        "DRIVER={ODBC Driver 17 for SQL Server};"
-        f"SERVER={SQL_SERVER};"
-        f"DATABASE={DATABASE};"
-        # "UID=your_ssms_uid;"
-        # "PWD=your_ssms_pw;"
-        "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
-    )
+   ALERT_THRESHOLD_HOURS = 48
+   COLLECTION_INTERVAL_MINUTES = 40
+
+   CONNECTION_STRING = (
+      "DRIVER={ODBC Driver 17 for SQL Server};"
+      f"SERVER={SQL_SERVER};"
+      f"DATABASE={DATABASE};"
+      "UID=your_UID;"
+      "PWD=your_PWD;"
+      "Trusted_Connection=yes;"
+   )
    ```
 
-5. **Run the application**
+6. **Run the application**
     - Place both program one in the Central Server, another in the client site
     - On the Central Server, run:
    ```bash
@@ -83,6 +91,10 @@ This gives internal support a fast operational view of which sites need investig
    ```bash
    python agent.py
    ```
+   - Expected output upon successful run:
+   <p align="center">
+   <img src="./static/images/output.jpeg" alt="UI Layout" height="300"/>
+   </p>
 
 # User Interface Layout
 <p align="center">
