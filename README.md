@@ -32,9 +32,10 @@ This gives internal support a fast operational view of which sites need investig
 
 # Instructions to Run
 1. **Pre-requisite**
-   - Google Sheet / Apps Script
-   - Python 3.x.x
-   - Microsoft ODBC Driver 17 for SQL Server (x64)
+   - Ensure the following software is installed:
+     - Google Sheets / Apps Script
+     - Python 3.x
+     - Microsoft ODBC Driver 17 for SQL Server (x64)
 
 2. **Clone the repository**
    ```bash
