@@ -11,8 +11,7 @@ from models import get_db_connection, init_db
 app = Flask(__name__)
 
 DEFAULT_GOOGLE_SHEET_SYNC_URL = (
-    "https://script.google.com/macros/s/"
-    "AKfycbxIAwFbkot1Q5X54EbhLik3NLq85KcpYVkeOyh-9Rjgui0nrcI5zIvQaVckHQWAxZju/exec"
+    "https://script.google.com/macros/s/AKfycbxIAwFbkot1Q5X54EbhLik3NLq85KcpYVkeOyh-9Rjgui0nrcI5zIvQaVckHQWAxZju/exec"
 )
 DEFAULT_GOOGLE_SHEET_API_KEY = "nrt_8F2xQ9mL7vP3zK1cR6wT4yH0bN5sJ8"
 
