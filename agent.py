@@ -1,6 +1,8 @@
 import pyodbc
 import requests
 from datetime import datetime
+from pathlib import Path
+import os
 import sys
 import time
 
@@ -14,6 +16,7 @@ DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
 
 ALERT_THRESHOLD_HOURS = 48
 COLLECTION_INTERVAL_MINUTES = 40
+STARTUP_LAUNCHER_NAME = "NRT Monitor Collector.cmd"
 
 CONNECTION_STRING = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -23,6 +26,47 @@ CONNECTION_STRING = (
     "PWD=your_PWD;"
     "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
 )
+
+
+def get_startup_folder():
+    appdata = os.getenv("APPDATA")
+    if not appdata:
+        raise RuntimeError("APPDATA is not available for the current user")
+
+    return Path(appdata) / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup"
+
+
+def build_startup_launcher_content():
+    project_dir = Path(__file__).resolve().parent
+    python_executable = Path(sys.executable).resolve()
+    script_path = Path(__file__).resolve()
+
+    return "\n".join(
+        [
+            "@echo off",
+            "setlocal",
+            f'cd /d "{project_dir}"',
+            f'"{python_executable}" "{script_path}"',
+            "endlocal",
+            "",
+        ]
+    )
+
+
+def install_startup_launcher():
+    startup_folder = get_startup_folder()
+    startup_folder.mkdir(parents=True, exist_ok=True)
+    launcher_path = startup_folder / STARTUP_LAUNCHER_NAME
+    launcher_path.write_text(build_startup_launcher_content(), encoding="utf-8")
+    return launcher_path
+
+
+def remove_startup_launcher():
+    launcher_path = get_startup_folder() / STARTUP_LAUNCHER_NAME
+    if launcher_path.exists():
+        launcher_path.unlink()
+        return launcher_path, True
+    return launcher_path, False
 
 def serialize_datetime(value):
     return value.strftime("%Y-%m-%d %H:%M:%S") if value else None
@@ -212,7 +256,16 @@ def run_collector_loop(interval_minutes=COLLECTION_INTERVAL_MINUTES):
         time.sleep(interval_seconds)
 
 if __name__ == "__main__":
-    if "--once" in sys.argv:
+    if "--install-startup" in sys.argv:
+        launcher_path = install_startup_launcher()
+        print(f"Startup launcher installed at: {launcher_path}")
+    elif "--remove-startup" in sys.argv:
+        launcher_path, removed = remove_startup_launcher()
+        if removed:
+            print(f"Startup launcher removed from: {launcher_path}")
+        else:
+            print(f"Startup launcher was not present: {launcher_path}")
+    elif "--once" in sys.argv:
         run_collector()
     else:
         run_collector_loop()
