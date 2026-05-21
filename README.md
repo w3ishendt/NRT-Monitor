@@ -61,9 +61,9 @@ This gives internal support a fast operational view of which sites need investig
 5. **Edit the credentials**
     - In the `agent.py`, edit the following credentials:
    ```bash
-   SQL_SERVER = r"your_server_name" # eg.,: “(local)\SQLEXPRESS” or “DESKTOP-TAICUPD\SQLEXPRESS”
+   SQL_SERVER = r"(local)\SQLEXPRESS"
    DATABASE = "NRT-V2"
-   SITE_NAME = " eg.,: Penang Courtyard "
+   SITE_NAME = "Test Site"
    SITE_CODE = DATABASE
    API_URL = "https://script.google.com/macros/s/your_api_url/exec"
    API_KEY = "your_api_key"
@@ -71,6 +71,7 @@ This gives internal support a fast operational view of which sites need investig
 
    ALERT_THRESHOLD_HOURS = 48
    COLLECTION_INTERVAL_MINUTES = 40
+   STARTUP_LAUNCHER_NAME = "NRT Monitor Collector.cmd"
 
    CONNECTION_STRING = (
       "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -78,7 +79,7 @@ This gives internal support a fast operational view of which sites need investig
       f"DATABASE={DATABASE};"
       "UID=your_UID;"
       "PWD=your_PWD;"
-      "Trusted_Connection=yes;"
+      "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
    )
    ```
 
