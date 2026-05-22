@@ -1,8 +1,8 @@
 @echo off
 setlocal
 
-cd /d "C:\NRT_Monitor"
-"C:\NRT_Monitor\venv\Scripts\python.exe" "C:\NRT_Monitor\agent.py"
+cd /d "C:\NRT-Monitor"
+"C:\NRT-Monitor\venv\Scripts\python.exe" "C:\NRT-Monitor\agent.py"
 
 pause
 endlocal
