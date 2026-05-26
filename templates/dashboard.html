@@ -11,7 +11,7 @@
             <header class="dashboard-header text-center">
                 <p class="dashboard-kicker">Central Dashboard Server</p>
                 <h1>NRT Monitoring</h1>
-                <p class="dashboard-subtitle">Sites below currently have failed NRT detection based on TB_TNG_CONTROL_BATCH.</p>
+                <p class="dashboard-subtitle">Sites below currently have failed NRT detection based on TNG_CONTROL_BATCH.</p>
             </header>
         </div>
 
@@ -21,14 +21,30 @@
                 {% if statuses %}
                 <div class="site-card-grid">
                     {% for s in statuses %}
-                    <a
-                        class="site-alert-card site-alert-{{ s.status }}{% if s.site_id == selected_site_id %} is-active{% endif %}"
-                        href="{{ url_for('dashboard', site=s.site_id) }}#site-detail"
-                        title="{{ s.terminal_count }} terminals in TB_TNG_CONTROL_BATCH"
-                    >
-                        <span class="site-alert-name">{{ s.site_name }}</span>
-                        <span class="site-alert-meta">{{ s.batch_count }} control batch rows</span>
-                    </a>
+                    <div class="site-card-shell">
+                        <a
+                            class="site-alert-card site-alert-{{ s.status }}{% if s.site_id == selected_site_id %} is-active{% endif %}"
+                            href="{{ url_for('dashboard', site=s.site_id) }}#site-detail"
+                            title="{{ s.terminal_count }} terminals in TNG_CONTROL_BATCH"
+                        >
+                            <span class="site-alert-name">{{ s.site_name }}</span>
+                            <span class="site-alert-meta">{{ s.batch_count }} control batch rows</span>
+                        </a>
+                        <div class="site-card-dropdown">
+                            {% if s.log_file_url %}
+                            <a
+                                class="site-card-log-link"
+                                href="{{ s.log_file_url }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Download log file
+                            </a>
+                            {% else %}
+                            <span class="site-card-log-link is-disabled">Log file unavailable</span>
+                            {% endif %}
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
                 {% else %}
