@@ -1,0 +1,79 @@
+{
+  "updated_at": "2026-05-26 09:30:51",
+  "site_name": "Test Site",
+  "site_code": "NRT-V2-Test",
+  "server_name": "(local)\\SQLEXPRESS",
+  "database": "NRT-V2-Test",
+  "checked_at": "2026-05-26 09:30:41",
+  "database_time": "2026-05-26 09:30:41",
+  "status": "Red",
+  "issue_message": "NRT alert - 5 control batch records pending, oldest operdate is 546 hours old",
+  "batch_count": 5,
+  "terminal_count": 1,
+  "last_batch_no": 105,
+  "latest_operdate": "2026-05-07 15:29:46",
+  "oldest_operdate": "2026-05-03 15:29:46",
+  "oldest_age_hours": 546,
+  "delivery_ok": false,
+  "log_file_name": "test-site__2026-05-26.log",
+  "log_file_url": "https://drive.google.com/file/d/1LqymL5DY3C0ftMoBnnPqCUJp9WG7yXvu/view?usp=drivesdk",
+  "apps_script_url": "https://script.google.com/macros/s/AKfycbwwnMbJ3odFcioxEv7sSTxlpGCC9-My7cueHXV-d-JGvd3RVzUXrAfTdTY3W_BLU4gc/exec",
+  "dashboard_api_url": "http://127.0.0.1:5000/api/nrt-status",
+  "control_batches": [
+    {
+      "site_id": "D67",
+      "terminal_id": "P01",
+      "batch_no": 105,
+      "batch_tran_type": "FN",
+      "operdate": "2026-05-07 15:29:46",
+      "eojdatetime": "2026-05-08 15:29:46",
+      "record_count": 20,
+      "age_hours": 450,
+      "status": "Red"
+    },
+    {
+      "site_id": "D67",
+      "terminal_id": "P01",
+      "batch_no": 104,
+      "batch_tran_type": "FN",
+      "operdate": "2026-05-06 15:29:46",
+      "eojdatetime": "2026-05-07 15:29:46",
+      "record_count": 15,
+      "age_hours": 474,
+      "status": "Red"
+    },
+    {
+      "site_id": "D67",
+      "terminal_id": "P01",
+      "batch_no": 103,
+      "batch_tran_type": "FN",
+      "operdate": "2026-05-05 15:29:46",
+      "eojdatetime": "2026-05-06 15:29:46",
+      "record_count": 8,
+      "age_hours": 498,
+      "status": "Red"
+    },
+    {
+      "site_id": "D67",
+      "terminal_id": "P01",
+      "batch_no": 102,
+      "batch_tran_type": "FN",
+      "operdate": "2026-05-04 15:29:46",
+      "eojdatetime": "2026-05-05 15:29:46",
+      "record_count": 12,
+      "age_hours": 522,
+      "status": "Red"
+    },
+    {
+      "site_id": "D67",
+      "terminal_id": "P01",
+      "batch_no": 101,
+      "batch_tran_type": "FN",
+      "operdate": "2026-05-03 15:29:46",
+      "eojdatetime": "2026-05-04 15:29:46",
+      "record_count": 10,
+      "age_hours": 546,
+      "status": "Red"
+    }
+  ]
+}

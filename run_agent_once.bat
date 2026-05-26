@@ -1,8 +1,13 @@
 @echo off
 setlocal
 
-cd /d "C:\NRT-Monitor"
-"C:\NRT-Monitor\venv\Scripts\python.exe" "C:\NRT-Monitor\agent.py"
+set "SCRIPT_DIR=%~dp0"
+set "VBS_FILE=%SCRIPT_DIR%run_agent_once.vbs"
 
-pause
-endlocal
+if not exist "%VBS_FILE%" (
+	echo Missing launcher: "%VBS_FILE%"
+	exit /b 1
+)
+
+start "" /min wscript.exe "%VBS_FILE%"
+exit /b 0

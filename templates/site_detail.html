@@ -6,7 +6,20 @@
                 <h2>{{ selected_site.site_name }} ({{ selected_site.site_code or selected_site.database }})</h2>
                 <p class="detail-subtitle">{{ selected_site.server_name }} | {{ selected_site.database }}</p>
             </header>
-            <div class="status-badge status-{{ selected_site.status }}">{{ selected_site.status }}</div>
+            <div class="detail-actions">
+                {% if selected_site.log_file_url %}
+                <a
+                    class="detail-log-link"
+                    href="{{ selected_site.log_file_url }}"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Download log file
+                </a>
+                {% else %}
+                <span class="detail-log-link is-disabled">Log file not available</span>
+                {% endif %}
+            </div>
         </div>
 
         <p class="detail-message">{{ selected_site.issue_message }}</p>
@@ -56,7 +69,7 @@
     <section class="table-panel">
         <div class="panel-header">
             <div>
-                <h2 class="panel-title">TB_TNG_CONTROL_BATCH</h2>
+                <h2 class="panel-title">TNG_CONTROL_BATCH</h2>
             </div>
             <div class="summary-value">{{ selected_site.batch_count }} rows</div>
         </div>
@@ -93,7 +106,7 @@
             </table>
         </div>
         {% else %}
-        <p class="empty-note">No TB_TNG_CONTROL_BATCH rows were included in the latest site snapshot.</p>
+        <p class="empty-note">No TNG_CONTROL_BATCH rows were included in the latest site snapshot.</p>
         {% endif %}
     </section>
 </section>

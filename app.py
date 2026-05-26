@@ -9,6 +9,11 @@ from flask import Flask, abort, jsonify, render_template, request
 from models import get_db_connection, init_db
 
 app = Flask(__name__)
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+
+DEFAULT_FLASK_DEBUG = os.getenv("FLASK_DEBUG", "0").strip().lower() in {"1", "true", "yes", "on"}
+DEFAULT_FLASK_USE_RELOADER = os.getenv("FLASK_USE_RELOADER", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 DEFAULT_GOOGLE_SHEET_SYNC_URL = (
     "https://script.google.com/macros/s/AKfycbxIAwFbkot1Q5X54EbhLik3NLq85KcpYVkeOyh-9Rjgui0nrcI5zIvQaVckHQWAxZju/exec"
@@ -38,7 +43,6 @@ def coerce_int(value):
     except (TypeError, ValueError):
         return None
 
-
 def extract_sheet_rows(payload):
     if isinstance(payload, list):
         return payload
@@ -54,18 +58,21 @@ def extract_sheet_rows(payload):
 
     raise ValueError("Unsupported Google Sheet response format")
 
-
 def normalize_sheet_row(row):
     payload_json = row.get("payload_json")
-    payload = {}
+    payload = {
+        key: value
+        for key, value in row.items()
+        if key != "payload_json"
+    }
 
     if isinstance(payload_json, str) and payload_json:
         try:
-            payload = json.loads(payload_json)
+            payload.update(json.loads(payload_json))
         except json.JSONDecodeError:
-            payload = {}
+            pass
     elif isinstance(payload_json, dict):
-        payload = dict(payload_json)
+        payload.update(payload_json)
 
     payload.update({
         "site_id": row.get("site_id") or payload.get("site_id"),
@@ -74,6 +81,7 @@ def normalize_sheet_row(row):
         "server_name": row.get("server_name") or payload.get("server_name"),
         "database": row.get("database") or row.get("database_name") or payload.get("database"),
         "status": row.get("status") or payload.get("status") or "Green",
+        "log_file_url": row.get("log_file_url") or row.get("log_url") or row.get("drive_log_url") or payload.get("log_file_url") or payload.get("log_url") or payload.get("drive_log_url"),
         "terminal_count": coerce_int(row.get("terminal_count")) if row.get("terminal_count") is not None else payload.get("terminal_count", 0),
         "batch_count": coerce_int(row.get("batch_count")) if row.get("batch_count") is not None else payload.get("batch_count", 0),
         "latest_operdate": row.get("latest_operdate") or payload.get("latest_operdate"),
@@ -95,7 +103,6 @@ def normalize_sheet_row(row):
         payload["batch_count"] = 0
 
     return payload
-
 
 def sync_google_sheet_data():
     sync_config = get_google_sync_config()
@@ -133,7 +140,6 @@ def sync_google_sheet_data():
 
     return {"synced": len(normalized_rows), "source": response.url}
 
-
 def save_site_status(data):
     received_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     site_id = data.get("site_id") or slugify_site_id(
@@ -142,12 +148,25 @@ def save_site_status(data):
         data.get("server_name", "server"),
     )
 
-    stored_data = dict(data)
-    stored_data["site_id"] = site_id
-    stored_data["received_at"] = received_at
-
     conn = get_db_connection()
     try:
+        existing_row = conn.execute(
+            "SELECT payload_json FROM site_statuses WHERE site_id = ?",
+            (site_id,),
+        ).fetchone()
+
+        existing_payload = {}
+        if existing_row and existing_row["payload_json"]:
+            try:
+                existing_payload = json.loads(existing_row["payload_json"])
+            except (TypeError, ValueError, json.JSONDecodeError):
+                existing_payload = {}
+
+        stored_data = dict(existing_payload)
+        stored_data.update(data)
+        stored_data["site_id"] = site_id
+        stored_data["received_at"] = received_at
+
         conn.execute(
             """
             INSERT INTO site_statuses (
@@ -207,7 +226,6 @@ def save_site_status(data):
 
     return stored_data
 
-
 def replace_site_statuses(site_rows):
     conn = get_db_connection()
     try:
@@ -228,7 +246,6 @@ def replace_site_statuses(site_rows):
     finally:
         conn.close()
 
-
 def load_failed_sites():
     conn = get_db_connection()
     try:
@@ -248,7 +265,8 @@ def load_failed_sites():
                 oldest_age_hours,
                 issue_message,
                 checked_at,
-                received_at
+                received_at,
+                payload_json
             FROM site_statuses
             WHERE status != 'Green'
             ORDER BY CASE status WHEN 'Red' THEN 0 WHEN 'Orange' THEN 1 ELSE 2 END,
@@ -258,8 +276,7 @@ def load_failed_sites():
     finally:
         conn.close()
 
-    return [dict(row) for row in rows]
-
+    return [normalize_sheet_row(dict(row)) for row in rows]
 
 def load_site_snapshot(site_id):
     conn = get_db_connection()
@@ -273,8 +290,7 @@ def load_site_snapshot(site_id):
 
     if row is None:
         abort(404)
-    return json.loads(row["payload_json"])
-
+    return normalize_sheet_row(json.loads(row["payload_json"]))
 
 @app.route("/")
 def dashboard():
@@ -307,11 +323,9 @@ def dashboard():
         sync_error=sync_error,
     )
 
-
 @app.route("/health")
 def health_check():
     return jsonify({"status": "ok"}), 200
-
 
 @app.route("/sync-google-sheet", methods=["POST", "GET"])
 def sync_google_sheet():
@@ -325,7 +339,6 @@ def sync_google_sheet():
 
     return jsonify({"message": "Google Sheet sync completed", **result}), 200
 
-
 @app.route("/api/nrt-status", methods=["POST"])
 def receive_nrt_status():
     data = request.get_json(silent=True)
@@ -333,9 +346,6 @@ def receive_nrt_status():
         return jsonify({"message": "Request body must be valid JSON"}), 400
 
     stored_data = save_site_status(data)
-
-    print("Received NRT status:")
-    print(stored_data)
 
     return jsonify({
         "message": "Status received",
@@ -348,4 +358,9 @@ init_db()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True, port=5000)
+    app.run(
+        host="0.0.0.0",
+        debug=DEFAULT_FLASK_DEBUG,
+        use_reloader=DEFAULT_FLASK_USE_RELOADER,
+        port=5000,
+    )
