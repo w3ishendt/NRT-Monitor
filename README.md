@@ -68,10 +68,19 @@ This gives internal support a fast operational view of which sites need investig
    API_URL = "https://script.google.com/macros/s/your_api_url/exec"
    API_KEY = "your_api_key"
    DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
+   GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
+   GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/google_drive_folder_url"
 
    ALERT_THRESHOLD_HOURS = 48
-   COLLECTION_INTERVAL_MINUTES = 40
-   STARTUP_LAUNCHER_NAME = "NRT Monitor Collector.cmd"
+   COLLECTION_INTERVAL_MINUTES = 1
+   STARTUP_LAUNCHER_BASENAME = "NRT Monitor Collector"
+   STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.vbs"
+   LEGACY_STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.cmd"
+   SINGLE_INSTANCE_MUTEX_NAME = "Global\\NRTMonitorCollectorSingleton"
+   LOG_PATH = Path(__file__).with_name("agent.log")
+   STATUS_PATH = Path(__file__).with_name("agent_status.json")
+   STATUS_SUMMARY_PATH = Path(__file__).with_name("agent_status.txt")
+   SITE_LOGS_DIR = Path(__file__).with_name("site_logs")
 
    CONNECTION_STRING = (
       "DRIVER={ODBC Driver 17 for SQL Server};"
