@@ -72,7 +72,7 @@ This gives internal support a fast operational view of which sites need investig
    GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/google_drive_folder_url"
 
    ALERT_THRESHOLD_HOURS = 48
-   COLLECTION_INTERVAL_MINUTES = 1
+   COLLECTION_INTERVAL_MINUTES = 40
    STARTUP_LAUNCHER_BASENAME = "NRT Monitor Collector"
    STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.vbs"
    LEGACY_STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.cmd"

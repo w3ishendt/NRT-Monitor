@@ -29,4 +29,6 @@ Thumbs.db
 # Local application data
 *.db
 *.log
+agent_status.json
+agent_status.txt
 instance/
