@@ -43,6 +43,33 @@ def coerce_int(value):
     except (TypeError, ValueError):
         return None
 
+
+def format_display_datetime(value):
+    if value in (None, ""):
+        return value
+
+    if not isinstance(value, str):
+        return value
+
+    normalized = value.strip()
+    if not normalized:
+        return normalized
+
+    parse_candidates = [normalized]
+    if normalized.endswith("Z"):
+        parse_candidates.append(normalized[:-1] + "+00:00")
+
+    for candidate in parse_candidates:
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone().replace(tzinfo=None)
+            return parsed.strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+
+    return normalized.replace("T", " ").replace(".000Z", "")
+
 def extract_sheet_rows(payload):
     if isinstance(payload, list):
         return payload
@@ -90,6 +117,25 @@ def normalize_sheet_row(row):
         "issue_message": row.get("issue_message") or payload.get("issue_message"),
         "checked_at": row.get("checked_at") or payload.get("checked_at"),
     })
+
+    for key in ("latest_operdate", "oldest_operdate", "checked_at", "received_at", "database_time", "last_eojdatetime"):
+        if key in payload:
+            payload[key] = format_display_datetime(payload.get(key))
+
+    control_batches = payload.get("control_batches")
+    if isinstance(control_batches, list):
+        normalized_batches = []
+        for batch in control_batches:
+            if not isinstance(batch, dict):
+                normalized_batches.append(batch)
+                continue
+
+            normalized_batch = dict(batch)
+            normalized_batch["operdate"] = format_display_datetime(normalized_batch.get("operdate"))
+            normalized_batch["eojdatetime"] = format_display_datetime(normalized_batch.get("eojdatetime"))
+            normalized_batches.append(normalized_batch)
+
+        payload["control_batches"] = normalized_batches
 
     payload["site_id"] = payload.get("site_id") or slugify_site_id(
         payload.get("site_name", "site"),
