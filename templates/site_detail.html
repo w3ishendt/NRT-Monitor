@@ -26,37 +26,37 @@
 
         <!-- Summary Cards Section -->
         <div class="summary-grid row g-3 mt-1">
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Terminal Count</span>
                 <span class="summary-value">{{ selected_site.terminal_count }}</span>
             </div>
             </div>
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Batch Count</span>
                 <span class="summary-value">{{ selected_site.batch_count }}</span>
             </div>
             </div>
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Latest Operdate</span>
                 <span class="summary-value">{{ selected_site.latest_operdate or '-' }}</span>
             </div>
             </div>
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Oldest Operdate</span>
                 <span class="summary-value">{{ selected_site.oldest_operdate or '-' }}</span>
             </div>
             </div>
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Oldest Age Hours</span>
                 <span class="summary-value">{{ selected_site.oldest_age_hours if selected_site.oldest_age_hours is not none else '-' }}</span>
             </div>
             </div>
-            <div class="col-12 col-md-6 col-xl-2">
+            <div class="col-12 col-md-4 col-xl-2">
             <div class="summary-box h-100">
                 <span class="summary-label">Received At</span>
                 <span class="summary-value">{{ selected_site.received_at }}</span>
