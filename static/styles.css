@@ -60,7 +60,7 @@ h3 {
 .detail-subtitle,
 .detail-message,
 .panel-subtitle {
-    margin: 12px auto 0;
+    margin: 8px auto 0;
     color: var(--text-muted);
     line-height: 1.6;
 }
