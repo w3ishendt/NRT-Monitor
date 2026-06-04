@@ -2,17 +2,20 @@ import atexit
 import ctypes
 import json
 from datetime import datetime
+from email.message import EmailMessage
 from pathlib import Path
 import os
 import re
+import smtplib
+import ssl
 import sys
 import time
 
 import pyodbc
 import requests
 
-SQL_SERVER = r"(local)\SQLEXPRESS"
-DATABASE = "NRT-V2"
+SQL_SERVER = r"DESKTOP-H23BB0S\SQLEXPRESS"
+DATABASE = "NRT-V2-Test"
 SITE_NAME = "Test Site"
 SITE_CODE = DATABASE
 API_URL = "https://script.google.com/macros/s/your_api_url/exec"
@@ -20,9 +23,20 @@ API_KEY = "your_api_key"
 DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
 GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
 GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/google_drive_folder_url"
+SMTP_SERVER = os.getenv("SMTP_SERVER", "mail.dtechdigital.com.my").strip()
+SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "support@dtechdigital.com.my").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "n^;J#O76;Xre")
+LOCAL_EMAIL_ALERTS_ENABLED = os.getenv("LOCAL_EMAIL_ALERTS_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+ALERT_EMAIL_RECIPIENTS = [
+    address.strip()
+    for address in os.getenv("ALERT_EMAIL_RECIPIENTS", "").split(",")
+    if address.strip()
+]
+EMAIL_ALERT_THRESHOLD_HOURS = 24
 
 ALERT_THRESHOLD_HOURS = 48
-COLLECTION_INTERVAL_MINUTES = 40
+COLLECTION_INTERVAL_MINUTES = 1
 STARTUP_LAUNCHER_BASENAME = "NRT Monitor Collector"
 STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.vbs"
 LEGACY_STARTUP_LAUNCHER_NAME = f"{STARTUP_LAUNCHER_BASENAME}.cmd"
@@ -36,10 +50,11 @@ CONNECTION_STRING = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
     f"SERVER={SQL_SERVER};"
     f"DATABASE={DATABASE};"
-    "UID=your_UID;"
-    "PWD=your_PWD;"
+    "UID=sa;"
+    "PWD=qwerty7890;"
     "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
 )
+
 
 ERROR_ALREADY_EXISTS = 183
 _single_instance_handle = None
@@ -82,7 +97,9 @@ def log_message(*parts):
     append_log_entry(message)
 
 
-def build_status_snapshot(status_data, delivery_ok):
+def build_status_snapshot(status_data, delivery_ok, email_result=None):
+    email_result = email_result or {}
+
     return {
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "site_name": status_data.get("site_name"),
@@ -104,6 +121,11 @@ def build_status_snapshot(status_data, delivery_ok):
         "log_file_url": status_data.get("log_file_url"),
         "apps_script_url": API_URL,
         "dashboard_api_url": DASHBOARD_API_URL,
+        "email_alert_active": email_result.get("active", False),
+        "email_alert_sent": email_result.get("sent", False),
+        "email_alert_sent_at": email_result.get("sent_at"),
+        "email_alert_key": email_result.get("key"),
+        "email_alert_error": email_result.get("error"),
         "control_batches": status_data.get("control_batches", []),
     }
 
@@ -129,6 +151,10 @@ def build_status_summary(snapshot):
         f"Log File URL: {snapshot.get('log_file_url')}",
         f"Apps Script URL: {snapshot.get('apps_script_url')}",
         f"Dashboard API URL: {snapshot.get('dashboard_api_url')}",
+        f"Email Alert Active: {snapshot.get('email_alert_active')}",
+        f"Email Alert Sent: {snapshot.get('email_alert_sent')}",
+        f"Email Alert Sent At: {snapshot.get('email_alert_sent_at')}",
+        f"Email Alert Error: {snapshot.get('email_alert_error')}",
     ]
     return "\n".join(lines)
 
@@ -158,6 +184,16 @@ def print_latest_status():
         return
 
     print(STATUS_SUMMARY_PATH.read_text(encoding="utf-8"))
+
+
+def load_previous_status_snapshot():
+    if not STATUS_PATH.exists():
+        return {}
+
+    try:
+        return json.loads(STATUS_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
 
 
 def get_site_log_date(status_data):
@@ -211,6 +247,106 @@ def write_site_log(status_data):
     with site_log_path.open("a", encoding="utf-8") as site_log_file:
         site_log_file.write(build_site_log_entry(status_data))
     return site_log_path
+
+
+def build_email_alert_key(status_data):
+    batch_count = status_data.get("batch_count") or 0
+    oldest_age_hours = status_data.get("oldest_age_hours")
+    if batch_count <= 0 or oldest_age_hours is None or oldest_age_hours < EMAIL_ALERT_THRESHOLD_HOURS:
+        return None
+
+    oldest_operdate = status_data.get("oldest_operdate") or "none"
+    return f"{status_data.get('site_id')}|{oldest_operdate}"
+
+
+def build_email_subject(status_data):
+    return f"{status_data.get('site_name')} NRT submission failed more than {EMAIL_ALERT_THRESHOLD_HOURS} hours"
+
+
+def build_email_body(status_data):
+    lines = [
+        "Dear Sir/Madam,",
+        "",
+        f"Please be informed that we have detected the NRT (Near Real Time Transaction) submission to TNG has been failing for more than {EMAIL_ALERT_THRESHOLD_HOURS} hours.",
+        "",
+        "NRT is the transaction settlement/collection mechanism used by TNG. In the event of internet or network interruption at site, the NRT submission process may be affected.",
+        "",
+        "Kindly check and ensure the internet/network connectivity at site is functioning properly.",
+        "",
+        "This is an auto-generated email notification.",
+        "",
+        "Thank you.",
+    ]
+    return "\n".join(lines)
+
+
+def send_email_alert(status_data):
+    if not SMTP_SERVER or not SMTP_USERNAME or not SMTP_PASSWORD or not ALERT_EMAIL_RECIPIENTS:
+        raise RuntimeError("SMTP configuration is incomplete")
+
+    message = EmailMessage()
+    message["Subject"] = build_email_subject(status_data)
+    message["From"] = SMTP_USERNAME
+    message["To"] = ", ".join(ALERT_EMAIL_RECIPIENTS)
+    message.set_content(build_email_body(status_data))
+
+    ssl_context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, context=ssl_context, timeout=30) as smtp_server:
+        smtp_server.login(SMTP_USERNAME, SMTP_PASSWORD)
+        smtp_server.send_message(message)
+
+
+def handle_email_alert(status_data, previous_snapshot):
+    if not LOCAL_EMAIL_ALERTS_ENABLED:
+        return {
+            "active": False,
+            "sent": False,
+            "sent_at": None,
+            "key": None,
+            "error": None,
+        }
+
+    alert_key = build_email_alert_key(status_data)
+    if not alert_key:
+        return {
+            "active": False,
+            "sent": False,
+            "sent_at": None,
+            "key": None,
+            "error": None,
+        }
+
+    if previous_snapshot.get("email_alert_sent") and previous_snapshot.get("email_alert_key") == alert_key:
+        sent_at = previous_snapshot.get("email_alert_sent_at")
+        log_message(f"Email alert already sent for current incident at {sent_at}. Skipping duplicate notification.")
+        return {
+            "active": True,
+            "sent": True,
+            "sent_at": sent_at,
+            "key": alert_key,
+            "error": None,
+        }
+
+    try:
+        send_email_alert(status_data)
+        sent_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_message(f"Email alert sent to {', '.join(ALERT_EMAIL_RECIPIENTS)}")
+        return {
+            "active": True,
+            "sent": True,
+            "sent_at": sent_at,
+            "key": alert_key,
+            "error": None,
+        }
+    except Exception as exc:
+        log_message(f"Email alert send failed: {exc}")
+        return {
+            "active": True,
+            "sent": False,
+            "sent_at": None,
+            "key": alert_key,
+            "error": str(exc),
+        }
 
 
 def build_drive_upload_payload(status_data, site_log_path):
@@ -463,6 +599,8 @@ def build_error_payload(error_message):
 
 # Runs one NRT collection cycle and sends the result to the API.
 def run_collector():
+    previous_snapshot = load_previous_status_snapshot()
+
     try:
         status_data = collect_nrt_status()
     except Exception as exc:
@@ -474,8 +612,10 @@ def run_collector():
     delivery_result = send_to_api(status_data, site_log_path)
     status_data["log_file_url"] = delivery_result.get("log_file_url")
 
+    email_result = handle_email_alert(status_data, previous_snapshot)
+
     delivery_ok = delivery_result["delivery_ok"]
-    status_snapshot = build_status_snapshot(status_data, delivery_ok)
+    status_snapshot = build_status_snapshot(status_data, delivery_ok, email_result)
     write_status_snapshot(status_snapshot)
 
     for line in build_console_status_lines(status_data, delivery_ok):
