@@ -61,8 +61,8 @@ This gives internal support a fast operational view of which sites need investig
 5. **Edit the credentials**
     - In the `agent.py`, edit the following credentials:
    ```bash
-   SQL_SERVER = r"(local)\SQLEXPRESS"
-   DATABASE = "NRT-V2"
+   SQL_SERVER = r"DESKTOP-H23BB0S\SQLEXPRESS"
+   DATABASE = "NRT-V2-Test"
    SITE_NAME = "Test Site"
    SITE_CODE = DATABASE
    API_URL = "https://script.google.com/macros/s/your_api_url/exec"
@@ -70,6 +70,17 @@ This gives internal support a fast operational view of which sites need investig
    DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
    GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
    GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/google_drive_folder_url"
+   SMTP_SERVER = os.getenv("SMTP_SERVER", "mail.your_smtp_server.com.my").strip()
+   SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
+   SMTP_USERNAME = os.getenv("SMTP_USERNAME", "your_smtp_username.com.my").strip()
+   SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "your_smtp_password")
+   LOCAL_EMAIL_ALERTS_ENABLED = os.getenv("LOCAL_EMAIL_ALERTS_ENABLED", "0").strip().lower() in {"1", "true", "yes", "on"}
+   ALERT_EMAIL_RECIPIENTS = [
+      address.strip()
+      for address in os.getenv("ALERT_EMAIL_RECIPIENTS", "").split(",")
+      if address.strip()
+   ]
+   EMAIL_ALERT_THRESHOLD_HOURS = 24
 
    ALERT_THRESHOLD_HOURS = 48
    COLLECTION_INTERVAL_MINUTES = 40
@@ -86,8 +97,8 @@ This gives internal support a fast operational view of which sites need investig
       "DRIVER={ODBC Driver 17 for SQL Server};"
       f"SERVER={SQL_SERVER};"
       f"DATABASE={DATABASE};"
-      "UID=your_UID;"
-      "PWD=your_PWD;"
+      "UID=sa;"
+      "PWD=qwerty7890;"
       "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
    )
    ```
