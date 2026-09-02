@@ -69,7 +69,7 @@ This gives internal support a fast operational view of which sites need investig
    API_KEY = "your_api_key"
    DASHBOARD_API_URL = "http://127.0.0.1:5000/api/nrt-status"
    GOOGLE_DRIVE_FOLDER_ID = "google_drive_folder_id"
-   GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/google_drive_folder_url"
+   GOOGLE_DRIVE_FOLDER_URL = "https://drive.google.com/drive/folders/your_google_drive_folder_url"
    SMTP_SERVER = os.getenv("SMTP_SERVER", "mail.your_smtp_server.com.my").strip()
    SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
    SMTP_USERNAME = os.getenv("SMTP_USERNAME", "your_smtp_username.com.my").strip()
@@ -101,6 +101,18 @@ This gives internal support a fast operational view of which sites need investig
       "PWD=qwerty7890;"
       "Trusted_Connection=yes;" # Comment this if using SQL auth and provide UID/PWD
    )
+   ```
+   - Also in the `app.py`, edit the following credentials:
+   ```bash
+   DEFAULT_GOOGLE_SHEET_SYNC_URL = (
+      "https://script.google.com/macros/s/your_api_url/exec"
+   )
+   DEFAULT_GOOGLE_SHEET_API_KEY = "your_api_key"
+   DEFAULT_SMTP_SERVER = "mail.dtechdigital.com.my"
+   DEFAULT_SMTP_PORT = 465
+   DEFAULT_SMTP_USERNAME = "your_smtp_username.com.my"
+   DEFAULT_SMTP_PASSWORD = "your_smtp_password"
+   EMAIL_ALERT_THRESHOLD_HOURS = 24
    ```
 
 6. **Run the application**
