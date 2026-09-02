@@ -34,7 +34,7 @@
                     <div class="site-card-shell">
                         <a
                             class="site-alert-card site-alert-{{ s.status }}{% if s.site_id == selected_site_id %} is-active{% endif %}"
-                            href="{{ url_for('dashboard', site=s.site_id) }}#site-detail"
+                            href="{{ url_for('dashboard', site=s.site_id, sort=sort_order) }}#site-detail"
                             title="{{ s.terminal_count }} terminals in TNG_CONTROL_BATCH"
                         >
                             <span class="site-alert-name">{{ s.site_name }}</span>
