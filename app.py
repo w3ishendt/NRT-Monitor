@@ -19,13 +19,13 @@ DEFAULT_FLASK_DEBUG = os.getenv("FLASK_DEBUG", "0").strip().lower() in {"1", "tr
 DEFAULT_FLASK_USE_RELOADER = os.getenv("FLASK_USE_RELOADER", "0").strip().lower() in {"1", "true", "yes", "on"}
 
 DEFAULT_GOOGLE_SHEET_SYNC_URL = (
-    "https://script.google.com/macros/s/AKfycbxIAwFbkot1Q5X54EbhLik3NLq85KcpYVkeOyh-9Rjgui0nrcI5zIvQaVckHQWAxZju/exec"
+    "https://script.google.com/macros/s/your_api_url/exec"
 )
-DEFAULT_GOOGLE_SHEET_API_KEY = "nrt_8F2xQ9mL7vP3zK1cR6wT4yH0bN5sJ8"
+DEFAULT_GOOGLE_SHEET_API_KEY = "your_api_key"
 DEFAULT_SMTP_SERVER = "mail.dtechdigital.com.my"
 DEFAULT_SMTP_PORT = 465
-DEFAULT_SMTP_USERNAME = "support@dtechdigital.com.my"
-DEFAULT_SMTP_PASSWORD = "n^;J#O76;Xre"
+DEFAULT_SMTP_USERNAME = "your_smtp_username.com.my"
+DEFAULT_SMTP_PASSWORD = "your_smtp_password"
 EMAIL_ALERT_THRESHOLD_HOURS = 24
 
 
@@ -119,6 +119,50 @@ def format_display_datetime(value):
             continue
 
     return normalized.replace("T", " ").replace(".000Z", "")
+
+
+def parse_sortable_datetime(value):
+    if value in (None, ""):
+        return datetime.min
+
+    if isinstance(value, datetime):
+        return value
+
+    if not isinstance(value, str):
+        return datetime.min
+
+    normalized = value.strip()
+    if not normalized:
+        return datetime.min
+
+    parse_candidates = [normalized]
+    if normalized.endswith("Z"):
+        parse_candidates.append(normalized[:-1] + "+00:00")
+    if " " in normalized and "T" not in normalized:
+        parse_candidates.append(normalized.replace(" ", "T", 1))
+
+    for candidate in parse_candidates:
+        try:
+            parsed = datetime.fromisoformat(candidate)
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone().replace(tzinfo=None)
+            return parsed
+        except ValueError:
+            continue
+
+    return datetime.min
+
+
+def sort_control_batches(control_batches, sort_order="desc"):
+    if not isinstance(control_batches, list):
+        return control_batches
+
+    reverse = sort_order != "asc"
+    return sorted(
+        control_batches,
+        key=lambda batch: parse_sortable_datetime(batch.get("operdate") if isinstance(batch, dict) else None),
+        reverse=reverse,
+    )
 
 def extract_sheet_rows(payload):
     if isinstance(payload, list):
@@ -632,6 +676,9 @@ def load_site_snapshot(site_id):
 def dashboard():
     sync_error = None
     sync_result = None
+    sort_order = request.args.get("sort", "desc").strip().lower()
+    if sort_order not in {"asc", "desc"}:
+        sort_order = "desc"
 
     if get_google_sync_config()["url"]:
         try:
@@ -647,6 +694,9 @@ def dashboard():
         available_site_ids = {site["site_id"] for site in statuses}
         if selected_site_id in available_site_ids:
             selected_site = load_site_snapshot(selected_site_id)
+            control_batches = selected_site.get("control_batches")
+            if isinstance(control_batches, list):
+                selected_site["control_batches"] = sort_control_batches(control_batches, sort_order)
         else:
             selected_site_id = None
 
@@ -655,6 +705,7 @@ def dashboard():
         statuses=statuses,
         selected_site=selected_site,
         selected_site_id=selected_site_id,
+        sort_order=sort_order,
         sync_result=sync_result,
         sync_error=sync_error,
     )
