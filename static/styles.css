@@ -138,24 +138,83 @@ h3 {
     flex-direction: column;
     justify-content: flex-start;
     gap: 4px;
+    --card-shadow-dark-rgb: 32, 36, 63;
+    --card-shadow-light-rgb: 79, 87, 133;
+    --card-shadow-alpha: 0.14;
+    --card-shadow-alpha-strong: 0.24;
+    --card-breathe-opacity: 0.18;
+    --card-hover-shadow-alpha: 0.22;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
     min-height: 100px;
     height: 100%;
     padding: 12px 12px;
     border-radius: 18px;
     text-decoration: none;
     color: #ffffff;
-    box-shadow: 0 10px 20px rgba(32, 36, 63, 0.16);
+    box-shadow: 0 8px 14px rgba(var(--card-shadow-dark-rgb), var(--card-shadow-alpha));
+    animation: site-card-breathe 4.8s ease-in-out infinite;
     transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.site-alert-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, var(--card-breathe-top), var(--card-breathe-bottom));
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    animation: site-card-color-breathe 4.8s ease-in-out infinite;
+}
+
+.site-alert-card > * {
+    position: relative;
+    z-index: 1;
 }
 
 .site-alert-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 16px 28px rgba(32, 36, 63, 0.2);
+    box-shadow: 0 10px 18px rgba(var(--card-shadow-light-rgb), var(--card-hover-shadow-alpha));
 }
 
 .site-alert-card.is-active {
     outline: 4px solid rgba(79, 102, 208, 0.18);
     transform: translateY(-2px);
+}
+
+@keyframes site-card-breathe {
+    0%,
+    100% {
+        box-shadow: 0 8px 14px rgba(var(--card-shadow-dark-rgb), var(--card-shadow-alpha));
+    }
+
+    50% {
+        box-shadow: 0 8px 14px rgba(var(--card-shadow-light-rgb), var(--card-shadow-alpha-strong));
+    }
+}
+
+@keyframes site-card-color-breathe {
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: var(--card-breathe-opacity);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-alert-card {
+        animation: none;
+    }
+
+    .site-alert-card::before {
+        animation: none;
+    }
 }
 
 .site-card-dropdown {
@@ -203,14 +262,37 @@ h3 {
 }
 
 .site-alert-Orange {
-    background: linear-gradient(135deg, #ffb31a 0%, #f49324 100%);
+    --card-breathe-top: #FFE5C7;
+    --card-breathe-bottom: #FFE5C7;
+    --card-shadow-dark-rgb: 251, 138, 25;
+    --card-shadow-light-rgb: 255, 229, 199;
+    --card-shadow-alpha: 0.6;
+    --card-shadow-alpha-strong: 0.6;
+    --card-hover-shadow-alpha: 0.66;
+    --card-breathe-opacity: 0.58;
+    background: linear-gradient(135deg, #f7a644 0%, #f49324 100%);
 }
 
 .site-alert-Red {
-    background: linear-gradient(135deg, #ff3939 0%, #ff0000 100%);
+    --card-breathe-top: #FFD4D4;
+    --card-breathe-bottom: #FFD4D4;
+    --card-shadow-dark-rgb: 248, 33, 33;
+    --card-shadow-light-rgb: 255, 212, 212;
+    --card-shadow-alpha: 0.6;
+    --card-shadow-alpha-strong: 0.6;
+    --card-hover-shadow-alpha: 0.66;
+    --card-breathe-opacity: 0.54;
+    background: linear-gradient(135deg, #ff4646 0%, #f80e0e 100%);
 }
 
 .site-alert-Green {
+    --card-breathe-top: #6ee7a0;
+    --card-breathe-bottom: #6ee7a0;
+    --card-shadow-dark-rgb: 0, 176, 80;
+    --card-shadow-light-rgb: 110, 231, 160;
+    --card-shadow-alpha: 0.2;
+    --card-shadow-alpha-strong: 0.34;
+    --card-breathe-opacity: 0.16;
     background: linear-gradient(135deg, #22c55e 0%, #00b050 100%);
 }
 
@@ -354,6 +436,39 @@ h3 {
     font-weight: 800;
 }
 
+.table-sort-form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.table-sort-label {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8b90a6;
+}
+
+.table-sort-select {
+    min-width: 180px;
+    padding: 8px 0px; /**topbot rightleft**/
+    border: 1px solid #d8dced;
+    border-radius: 14px;
+    background: #ffffff;
+    color: var(--text-strong);
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(79, 87, 133, 0.12);
+}
+
+.table-sort-select:focus {
+    outline: 2px solid rgba(43, 132, 222, 0.2);
+    border-color: #2b84de;
+}
+
 .table-wrap {
     overflow-x: auto;
     border-radius: 16px;
@@ -416,6 +531,11 @@ h3 {
     .detail-actions,
     .detail-log-link {
         width: 100%;
+    }
+
+    .table-sort-select {
+        width: 100%;
+        min-width: 0;
     }
 
     .site-card-grid {
